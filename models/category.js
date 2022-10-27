@@ -15,16 +15,16 @@ module.exports = (sequelize, DataTypes) => {
   }
   Category.init(
     {
-      id: {
-        primaryKey: true,
-        type: DataTypes.STRING,
-      },
-      parentId: DataTypes.STRING,
-      name: DataTypes.STRING,
+      id: { type: DataTypes.BIGINT, autoIncrement: true, primaryKey: true },
+      productId: { type: DataTypes.STRING, allowNull: false },
+      name: { type: DataTypes.STRING, allowNull: false },
+      createdAt: { type: DataTypes.BIGINT, allowNull: false },
+      updatedAt: { type: DataTypes.BIGINT, allowNull: false },
     },
     {
       sequelize,
       modelName: 'Category',
+      timestamps: false,
     }
   )
   return Category

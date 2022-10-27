@@ -1,5 +1,6 @@
 const express = require('express')
 const cors = require('cors')
+const cookieSession = require('cookie-session')
 const morgan = require('morgan')
 const { Sequelize } = require('sequelize')
 // route
@@ -23,47 +24,57 @@ try {
   console.error('Connection error: ', error)
 }
 
-app.use(cors())
+// cors config
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  // origin: 'http://10.10.101.64:3000',
+  credentials: true,
+}
+
+app.use(cors(corsOptions))
+
+// parse requests of content-type - application/json
 app.use(express.json())
+
+// parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }))
+
+app.use(
+  cookieSession({
+    name: '_session',
+    secret: '1Tambah1SamaDengan2', // should use as secret environment variable
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  })
+)
+
+// morgan log
 app.use(morgan('dev'))
+
+// router
 app.use('/api', router)
 
+// port for request
+// app.listen(port, '10.10.101.64', () => console.log(`Server running at port ${port}`))
 app.listen(port, () => console.log(`Server running at port ${port}`))
 
 const db = require('../models')
 const Role = db.role
 
-db.sequelize.sync({ force: true }).then(() => {
-  console.log('Drop and Resync Db')
-  initial()
-})
+// force drop and create table
+// db.sequelize.sync({ force: true }).then(() => {
+//   console.log('Drop and Resync Db')
+//   initial()
+// })
 
 const initial = () => {
   Role.create({
-    id: '1dlfx6',
-    name: 'super admin',
+    id: '1',
+    name: 'Super Admin',
   })
 
   Role.create({
-    id: '1gluio',
-    name: 'admin',
-  })
-
-  Role.create({
-    id: '8nocn7',
-    name: 'user',
+    id: '2',
+    name: 'Admin',
   })
 }
-
-// const randomId = (length) => {
-//   var result = ''
-//   var chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-//   var charsLength = chars.length
-//   for (var i = 0; i < length; i++) {
-//     result += chars.charAt(Math.floor(Math.random() * charsLength))
-//   }
-//   return result
-// }
-
-// console.log(randomId(6));

@@ -11,24 +11,34 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      Order.belongsTo(models.Product, {
+        as: 'product',
+        foreignKey: 'productId',
+        onDelete: 'CASCADE',
+      })
+      Order.belongsTo(models.Supplier, {
+        as: 'supplier',
+        foreignKey: 'supplierId',
+      })
     }
   }
   Order.init(
     {
-      id: {
-        primaryKey: true,
-        type: DataTypes.STRING,
-      },
-      userId: DataTypes.STRING,
-      productId: DataTypes.STRING,
-      name: DataTypes.STRING,
-      quantity: DataTypes.INTEGER,
-      status: DataTypes.BOOLEAN,
-      description: DataTypes.TEXT,
+      id: { type: DataTypes.STRING, autoIncrement: false, primaryKey: true },
+      productId: { type: DataTypes.STRING, allowNull: false },
+      supplierId: { type: DataTypes.STRING, allowNull: true },
+      clientId: { type: DataTypes.STRING, allowNull: true },
+      invoice: { type: DataTypes.STRING, allowNull: false },
+      quantity: { type: DataTypes.INTEGER, allowNull: false },
+      date: { type: DataTypes.BIGINT, allowNull: false },
+      status: { type: DataTypes.BOOLEAN, allowNull: false },
+      createdAt: { type: DataTypes.BIGINT, allowNull: false },
+      updatedAt: { type: DataTypes.BIGINT, allowNull: false },
     },
     {
       sequelize,
       modelName: 'Order',
+      timestamps: false,
     }
   )
   return Order

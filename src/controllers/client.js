@@ -1,31 +1,21 @@
-const { Supplier: db, Product } = require('../../models')
+const { Client: db, Product } = require('../../models')
 const { uniqid, unixTimestamp } = require('../utils')
 const sequelize = require('sequelize')
 
 // -----------------------------------------------------------------------------
 
-// get all supplier data
-exports.getSuppliers = async (req, res) => {
+// get all client data
+exports.getClients = async (req, res) => {
   try {
-    const data = await db.findAll({
-      order: [['createdAt', 'DESC']],
-      include: [
-        {
-          model: Product,
-          as: 'product',
-          attributes: ['supplierId', 'name'],
-        },
-      ],
-    })
-
+    const data = await db.findAll()
     res.status(200).json(data)
   } catch (error) {
     res.json({ message: error.message })
   }
 }
 
-// get supplier detail by suppliername
-exports.getSupplier = async (req, res) => {
+// get client detail by clientname
+exports.getClient = async (req, res) => {
   const value = req.params.name
 
   try {
@@ -36,7 +26,6 @@ exports.getSupplier = async (req, res) => {
           value
         ),
       },
-      include: [{ model: Product, as: 'product', attributes: ['id', 'supplierId', 'name'] }],
     })
 
     res.status(200).json(data)
@@ -45,8 +34,8 @@ exports.getSupplier = async (req, res) => {
   }
 }
 
-// create new supplier data
-exports.createSupplier = async (req, res) => {
+// create new client data
+exports.createClient = async (req, res) => {
   const time = unixTimestamp()
 
   try {
@@ -66,8 +55,8 @@ exports.createSupplier = async (req, res) => {
   }
 }
 
-// get supplier detail by id
-exports.editSupplier = async (req, res) => {
+// get client detail by id
+exports.editClient = async (req, res) => {
   try {
     const data = await db.findOne({ where: { id: req.params.id } })
     res.status(200).json(data)
@@ -76,8 +65,8 @@ exports.editSupplier = async (req, res) => {
   }
 }
 
-// update supplier data by id
-exports.updateSupplier = async (req, res) => {
+// update client data by id
+exports.updateClient = async (req, res) => {
   try {
     const data = await db.update(
       {
@@ -100,8 +89,8 @@ exports.updateSupplier = async (req, res) => {
   }
 }
 
-// delete supplier data by id
-exports.deleteSupplier = async (req, res) => {
+// delete client data by id
+exports.deleteClient = async (req, res) => {
   try {
     await db.destroy({ where: { id: req.params.id } })
     res.status(200).json({ status: 'success' })
