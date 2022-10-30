@@ -4,18 +4,34 @@ const sequelize = require('sequelize')
 
 // -----------------------------------------------------------------------------
 
+// search all supplier data
+exports.searchSuppliers = async (req, res) => {
+  const value = req.query.name?.toLowerCase() || ''
+
+  try {
+    const data = await db.findAll({
+      order: [['createdAt', 'DESC']],
+      where: {
+        [Op.or]: [
+          { name: { [Op.iLike]: `%${value}%` } },
+          { location: { [Op.iLike]: `%${value}%` } },
+          { address: { [Op.iLike]: `%${value}%` } },
+        ],
+      },
+    })
+
+    res.status(200).json(data)
+  } catch (error) {
+    res.json({ message: error.message })
+  }
+}
+
 // get all supplier data
 exports.getSuppliers = async (req, res) => {
   try {
     const data = await db.findAll({
       order: [['createdAt', 'DESC']],
-      include: [
-        {
-          model: Product,
-          as: 'product',
-          attributes: ['supplierId', 'name'],
-        },
-      ],
+      include: [{ model: Product, as: 'product', attributes: ['supplierId', 'name'] }],
     })
 
     res.status(200).json(data)
@@ -30,6 +46,7 @@ exports.getSupplier = async (req, res) => {
 
   try {
     const data = await db.findOne({
+      order: [['createdAt', 'DESC']],
       where: {
         name: sequelize.where(
           sequelize.fn('LOWER', sequelize.fn('replace', sequelize.col('name'), ' ', '')), // case sensitive
@@ -87,14 +104,16 @@ exports.updateSupplier = async (req, res) => {
         mobile: req.body.mobile,
         updatedAt: unixTimestamp(),
       },
-      {
-        where: { id: req.params.id },
-        returning: true,
-        plain: true,
-      }
+      { where: { id: req.params.id }, returning: true, plain: true }
     )
 
-    res.status(200).json(data[1])
+    // find newly updated data
+    const findData = await db.findOne({
+      where: { id: data[1].id },
+      include: [{ model: Product, as: 'product', attributes: ['supplierId', 'name'] }],
+    })
+
+    res.status(200).json(findData)
   } catch (error) {
     res.json({ message: error.message })
   }

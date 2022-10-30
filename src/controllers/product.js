@@ -1,44 +1,71 @@
 const { Product: db, Order, Category, Supplier } = require('../../models')
 const { uniqid, unixTimestamp } = require('../utils')
-const { Sequelize } = require('sequelize')
+const Sequelize = require('sequelize')
+const Op = Sequelize.Op
 
 // -----------------------------------------------------------------------------
+
+// search all product data
+exports.searchProducts = async (req, res) => {
+  const value = req.query.name?.toLowerCase() || ''
+
+  try {
+    const data = await db.findAll({
+      order: [['createdAt', 'DESC']],
+      where: {
+        [Op.or]: [
+          { name: { [Op.iLike]: `%${value}%` } },
+          { '$category.name$': { [Op.iLike]: `%${value}%` } },
+          { '$supplier.name$': { [Op.iLike]: `%${value}%` } },
+        ],
+      },
+      attributes: { include: [[Sequelize.fn('SUM', Sequelize.col('order.quantity')), 'quantity']] },
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'productId', 'name'],
+          order: [['id', 'ASC']],
+        },
+        { model: Supplier, as: 'supplier', attributes: ['id', 'name', 'mobile'] },
+        {
+          model: Order,
+          as: 'order',
+          attributes: [],
+          include: [{ model: db, as: 'product', attributes: ['id', 'name'] }],
+        },
+      ],
+      group: ['Product.id', 'category.id', 'supplier.id', 'order->product.id'],
+    })
+
+    res.status(200).json(data)
+  } catch (error) {
+    res.json({ message: error.message })
+  }
+}
 
 // get all product data
 exports.getProducts = async (req, res) => {
   try {
     const data = await db.findAll({
       order: [['createdAt', 'DESC']],
-      attributes: {
-        include: [[Sequelize.fn('SUM', Sequelize.col('order.quantity')), 'quantity']],
-      },
+      attributes: { include: [[Sequelize.fn('SUM', Sequelize.col('order.quantity')), 'quantity']] },
       include: [
         {
           model: Category,
           as: 'category',
-          attributes: ['productId', 'name'],
-          separate: true,
-          limit: 1,
+          attributes: ['id', 'productId', 'name'],
+          order: [['id', 'ASC']],
         },
-        {
-          model: Supplier,
-          as: 'supplier',
-          attributes: ['id', 'name'],
-        },
+        { model: Supplier, as: 'supplier', attributes: ['id', 'name', 'mobile'] },
         {
           model: Order,
           as: 'order',
           attributes: [],
-          include: [
-            {
-              model: db,
-              as: 'product',
-              attributes: ['id', 'name'],
-            },
-          ],
+          include: [{ model: db, as: 'product', attributes: ['id', 'name'] }],
         },
       ],
-      group: ['Product.id', 'supplier.id', 'order->product.id'],
+      group: ['Product.id', 'category.id', 'supplier.id', 'order->product.id'],
     })
 
     res.status(200).json(data)
@@ -52,31 +79,15 @@ exports.getProduct = async (req, res) => {
   try {
     const data = await db.findAll({
       where: { slug: req.params.slug },
-      attributes: {
-        include: [[Sequelize.fn('SUM', Sequelize.col('order.quantity')), 'quantity']],
-      },
+      attributes: { include: [[Sequelize.fn('SUM', Sequelize.col('order.quantity')), 'quantity']] },
       include: [
-        {
-          model: Category,
-          as: 'category',
-          attributes: ['productId', 'name'],
-        },
-        {
-          model: Supplier,
-          as: 'supplier',
-          attributes: ['id', 'name', 'mobile'],
-        },
+        { model: Category, as: 'category', attributes: ['id', 'productId', 'name'] },
+        { model: Supplier, as: 'supplier', attributes: ['id', 'name', 'mobile'] },
         {
           model: Order,
           as: 'order',
           attributes: [],
-          include: [
-            {
-              model: db,
-              as: 'product',
-              attributes: ['id', 'name'],
-            },
-          ],
+          include: [{ model: db, as: 'product', attributes: ['id', 'name'] }],
         },
       ],
       group: ['Product.id', 'supplier.id', 'order->product.id', 'category.id'],
@@ -92,6 +103,8 @@ exports.getProduct = async (req, res) => {
 exports.createProduct = async (req, res) => {
   const id = uniqid(6)
   const time = unixTimestamp()
+  const category = req.body.category
+  const categoryFilter = category.filter(Boolean)
 
   try {
     const data = await db.create(
@@ -103,9 +116,9 @@ exports.createProduct = async (req, res) => {
         picture: req.body.picture,
         createdAt: time,
         updatedAt: time,
-        category: req.body.category.map((category) => ({
+        category: categoryFilter.map((category) => ({
           productId: id,
-          name: category,
+          name: category.trim(),
           createdAt: time,
           updatedAt: time,
         })),
@@ -117,16 +130,8 @@ exports.createProduct = async (req, res) => {
     const findData = await db.findOne({
       where: { name: data.name },
       include: [
-        {
-          model: Category,
-          as: 'category',
-          attributes: ['productId', 'name'],
-        },
-        {
-          model: Supplier,
-          as: 'supplier',
-          attributes: ['id', 'name', 'mobile'],
-        },
+        { model: Category, as: 'category', attributes: ['id', 'productId', 'name'] },
+        { model: Supplier, as: 'supplier', attributes: ['id', 'name', 'mobile'] },
       ],
     })
 
@@ -159,11 +164,7 @@ exports.updateProduct = async (req, res) => {
         picture: req.body.picture,
         updatedAt: unixTimestamp(),
       },
-      {
-        where: { id: id },
-        returning: true,
-        plain: true,
-      }
+      { where: { id: id }, returning: true, plain: true }
     )
 
     res.status(200).json(data[1])

@@ -17,22 +17,15 @@ exports.verify = async (req, res) => {
       include: [{ model: UserRole, as: 'role', attributes: ['id', 'name'] }],
     })
 
-    res.status(200).json(
-      data === null
-        ? {
-            user: '',
-            auth: false,
-          }
-        : data.status !== false
-        ? {
-            user: data,
-            auth: true,
-          }
-        : {
-            user: '',
-            auth: false,
-          }
-    )
+    res
+      .status(200)
+      .json(
+        data === null
+          ? { user: '', auth: false }
+          : data.status !== false
+          ? { user: data, auth: true }
+          : { user: '', auth: false }
+      )
   } catch (error) {
     res.json({ message: error.message })
   }
@@ -44,15 +37,15 @@ exports.signin = async (req, res) => {
     const user = await db.findOne({ where: { username: req.body.username } })
 
     // check user not exist
-    if (!user) return res.status(404).send({ status: 'error' })
+    if (!user) return res.status(404).send({ message: 'Invalid username or password' })
 
     // check password hash
     const passwordIsValid = bcrypt.compareSync(req.body.password, user.password)
-    if (!passwordIsValid) return res.status(401).send({ status: 'error' })
+    if (!passwordIsValid) return res.status(404).send({ message: 'Invalid username or password' })
 
     // generate token
     // token will expire after 86400 second / 24 hours
-    const token = jwt.sign({ id: user.id }, config.secret, { expiresIn: 86400 })
+    const token = jwt.sign({ id: user.id }, config.secret, {})
 
     // set session token
     req.session.token = token
@@ -69,10 +62,9 @@ exports.signin = async (req, res) => {
   }
 }
 
-// sign out account
+// sign out account and clear session
 exports.signout = async (req, res) => {
   try {
-    // clear session
     req.session = null
     return res.status(200).send({ message: 'Signed out!' })
   } catch (err) {

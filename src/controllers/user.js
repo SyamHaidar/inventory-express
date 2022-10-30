@@ -5,6 +5,29 @@ const sequelize = require('sequelize')
 
 // -----------------------------------------------------------------------------
 
+// search all user data
+exports.searchUsers = async (req, res) => {
+  const value = req.query.name?.toLowerCase() || ''
+
+  try {
+    const data = await db.findAll({
+      order: [['createdAt', 'DESC']],
+      where: {
+        [Op.or]: [
+          { fullName: { [Op.iLike]: `%${value}%` } },
+          { username: { [Op.iLike]: `%${value}%` } },
+          { '$role.name$': { [Op.iLike]: `%${value}%` } },
+        ],
+      },
+      include: [{ model: UserRole, as: 'role', attributes: ['id', 'name'] }],
+    })
+
+    res.status(200).json(data)
+  } catch (error) {
+    res.json({ message: error.message })
+  }
+}
+
 // get all user data
 exports.getUsers = async (req, res) => {
   try {
@@ -22,14 +45,14 @@ exports.getUsers = async (req, res) => {
 // get user detail by username
 exports.getUser = async (req, res) => {
   // username lowercase for case sensitive
-  const value = req.params.username?.toLowerCase() || ''
+  const username = req.params.username?.toLowerCase() || ''
 
   try {
     const data = await db.findOne({
       where: {
         username: sequelize.where(
           sequelize.fn('LOWER', sequelize.col('username')), // case sensitive
-          value
+          username
         ),
       },
       attributes: { exclude: ['password', 'token'] },
@@ -70,7 +93,7 @@ exports.createUser = async (req, res) => {
       fullName: req.body.fullName,
       username: !user ? username : username + randomNumber(4), // if username exist, add random number
       password: hash,
-      status: true,
+      status: req.body.status,
       token: '',
       createdAt: time,
       updatedAt: time,
@@ -114,14 +137,16 @@ exports.updateUser = async (req, res) => {
         status: req.body.status,
         updatedAt: unixTimestamp(),
       },
-      {
-        where: { id: req.params.id },
-        returning: true,
-        plain: true,
-      }
+      { where: { id: req.params.id }, returning: true, plain: true }
     )
 
-    res.status(200).json(data[1])
+    // find newly updated data
+    const findData = await db.findOne({
+      where: { id: data[1].id },
+      include: [{ model: UserRole, as: 'role', attributes: ['id', 'name'] }],
+    })
+
+    res.status(200).json(findData)
   } catch (error) {
     res.json({
       message: error.message,

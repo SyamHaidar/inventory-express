@@ -24,6 +24,7 @@ module.exports = (sequelize, DataTypes) => {
       Product.belongsTo(models.Supplier, {
         as: 'supplier',
         foreignKey: 'supplierId',
+        onDelete: 'CASCADE',
       })
     }
   }

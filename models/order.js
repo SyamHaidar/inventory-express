@@ -27,7 +27,6 @@ module.exports = (sequelize, DataTypes) => {
       id: { type: DataTypes.STRING, autoIncrement: false, primaryKey: true },
       productId: { type: DataTypes.STRING, allowNull: false },
       supplierId: { type: DataTypes.STRING, allowNull: true },
-      clientId: { type: DataTypes.STRING, allowNull: true },
       invoice: { type: DataTypes.STRING, allowNull: false },
       quantity: { type: DataTypes.INTEGER, allowNull: false },
       date: { type: DataTypes.BIGINT, allowNull: false },

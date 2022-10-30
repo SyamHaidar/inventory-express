@@ -3,6 +3,8 @@ const cors = require('cors')
 const cookieSession = require('cookie-session')
 const morgan = require('morgan')
 const { Sequelize } = require('sequelize')
+// log
+const morgaLog = require('./middleware/morgan')
 // route
 const router = require('./routes')
 
@@ -26,8 +28,8 @@ try {
 
 // cors config
 const corsOptions = {
-  origin: 'http://localhost:3000',
-  // origin: 'http://10.10.101.64:3000',
+  // origin: 'http://localhost:3000',
+  origin: 'http://192.168.43.228:3000',
   credentials: true,
 }
 
@@ -49,14 +51,14 @@ app.use(
 )
 
 // morgan log
-app.use(morgan('dev'))
+app.use(morgaLog)
 
 // router
 app.use('/api', router)
 
 // port for request
-// app.listen(port, '10.10.101.64', () => console.log(`Server running at port ${port}`))
-app.listen(port, () => console.log(`Server running at port ${port}`))
+app.listen(port, '192.168.43.228', () => console.log(`Server running at port ${port}`))
+// app.listen(port, () => console.log(`Server running at port ${port}`))
 
 const db = require('../models')
 const Role = db.role
