@@ -1,40 +1,44 @@
 const { Supplier: db, Product } = require('../../models')
 const { uniqid, unixTimestamp } = require('../utils')
-const sequelize = require('sequelize')
+const Sequelize = require('sequelize')
+const Op = Sequelize.Op
 
 // -----------------------------------------------------------------------------
 
-// search all supplier data
-exports.searchSuppliers = async (req, res) => {
-  const value = req.query.name?.toLowerCase() || ''
-
-  try {
-    const data = await db.findAll({
-      order: [['createdAt', 'DESC']],
-      where: {
-        [Op.or]: [
-          { name: { [Op.iLike]: `%${value}%` } },
-          { location: { [Op.iLike]: `%${value}%` } },
-          { address: { [Op.iLike]: `%${value}%` } },
-        ],
-      },
-    })
-
-    res.status(200).json(data)
-  } catch (error) {
-    res.json({ message: error.message })
-  }
-}
-
 // get all supplier data
 exports.getSuppliers = async (req, res) => {
+  const keyword = req.query.keyword || ''
+  const limit = 50
+  const page = req.query.page || 0
+  const offset = limit * page
+
   try {
-    const data = await db.findAll({
+    const data = await db.findAndCountAll({
+      where: {
+        [Op.or]: [
+          { name: { [Op.iLike]: `%${keyword}%` } },
+          { location: { [Op.iLike]: `%${keyword}%` } },
+          { address: { [Op.iLike]: `%${keyword}%` } },
+          { mobile: { [Op.iLike]: `%${keyword}%` } },
+        ],
+      },
+      include: [{ model: Product, as: 'product', attributes: ['id', 'name'] }],
       order: [['createdAt', 'DESC']],
-      include: [{ model: Product, as: 'product', attributes: ['supplierId', 'name'] }],
+      limit: limit,
+      offset: offset,
     })
 
-    res.status(200).json(data)
+    const totalPages = Math.ceil(data.count / limit)
+    const startIndex = data.count ? offset + 1 : 0
+    const endIndex = startIndex > 0 ? startIndex + data.rows.length - 1 : 0
+
+    res.status(200).json({
+      totalRecords: data.count,
+      totalPages: totalPages,
+      startIndex: startIndex,
+      endIndex: endIndex,
+      data: data.rows,
+    })
   } catch (error) {
     res.json({ message: error.message })
   }
@@ -42,18 +46,15 @@ exports.getSuppliers = async (req, res) => {
 
 // get supplier detail by suppliername
 exports.getSupplier = async (req, res) => {
-  const value = req.params.name
+  const id = req.params.id
 
   try {
     const data = await db.findOne({
-      order: [['createdAt', 'DESC']],
       where: {
-        name: sequelize.where(
-          sequelize.fn('LOWER', sequelize.fn('replace', sequelize.col('name'), ' ', '')), // case sensitive
-          value
-        ),
+        id: id,
       },
       include: [{ model: Product, as: 'product', attributes: ['id', 'supplierId', 'name'] }],
+      order: [['createdAt', 'DESC']],
     })
 
     res.status(200).json(data)
@@ -67,7 +68,7 @@ exports.createSupplier = async (req, res) => {
   const time = unixTimestamp()
 
   try {
-    const data = await db.create({
+    await db.create({
       id: uniqid(6),
       name: req.body.name,
       location: req.body.location,
@@ -77,7 +78,7 @@ exports.createSupplier = async (req, res) => {
       updatedAt: time,
     })
 
-    res.status(200).json(data)
+    res.status(200).json({ message: 'success' })
   } catch (error) {
     res.json({ message: error.message })
   }
@@ -96,7 +97,7 @@ exports.editSupplier = async (req, res) => {
 // update supplier data by id
 exports.updateSupplier = async (req, res) => {
   try {
-    const data = await db.update(
+    await db.update(
       {
         name: req.body.name,
         location: req.body.location,
@@ -104,16 +105,13 @@ exports.updateSupplier = async (req, res) => {
         mobile: req.body.mobile,
         updatedAt: unixTimestamp(),
       },
-      { where: { id: req.params.id }, returning: true, plain: true }
+      {
+        where: {
+          id: req.params.id,
+        },
+      }
     )
-
-    // find newly updated data
-    const findData = await db.findOne({
-      where: { id: data[1].id },
-      include: [{ model: Product, as: 'product', attributes: ['supplierId', 'name'] }],
-    })
-
-    res.status(200).json(findData)
+    res.status(200).json({ message: 'success' })
   } catch (error) {
     res.json({ message: error.message })
   }
@@ -123,7 +121,7 @@ exports.updateSupplier = async (req, res) => {
 exports.deleteSupplier = async (req, res) => {
   try {
     await db.destroy({ where: { id: req.params.id } })
-    res.status(200).json({ status: 'success' })
+    res.status(200).json({ message: 'success' })
   } catch (error) {
     res.json({ message: error.message })
   }

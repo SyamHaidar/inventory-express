@@ -22,6 +22,7 @@ const stream = {
         createdAt: time,
         updatedAt: time,
       })
+      // console.log(message)
     } catch (error) {
       console.log(error.message)
     }

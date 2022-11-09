@@ -21,23 +21,21 @@ router.post('/auth/signin', auth.signin) // user sign in
 router.post('/auth/signup', auth.signup) // user sign up
 router.post('/auth/signout', auth.signout) // user sign out
 
-/* ---------- CATEGORY ROUTES ---------- */
+/* ---------- LOG ROUTES ---------- */
 router.get('/log', [authJwt.verifyToken], log.getLogs) // get all
 
 /* ---------- CATEGORY ROUTES ---------- */
 router.get('/category', [authJwt.verifyToken], category.getCategories) // get all
 
 /* ---------- PRODUCT ROUTES ---------- */
-router.get('/product/search', [authJwt.verifyToken], product.searchProducts) // seacrh data
 router.get('/product', [authJwt.verifyToken], product.getProducts) // get all
-router.get('/product/:slug', [authJwt.verifyToken], product.getProduct) // get detail by name
+router.get('/product/:id', [authJwt.verifyToken], product.getProduct) // get detail by id
 router.post('/product', [authJwt.verifyToken], product.createProduct) // create new data
 router.get('/product/:id/edit', [authJwt.verifyToken], product.editProduct) // get detail by id for edit
 router.patch('/product/:id/update', [authJwt.verifyToken], product.updateProduct) // update data by id
 router.delete('/product/:id/delete', [authJwt.verifyToken], product.deleteProduct) // delete data by id
 
 /* ---------- ORDER ROUTES ---------- */
-router.get('/order/search', [authJwt.verifyToken], order.searchOrders) // search data
 router.get('/order', [authJwt.verifyToken], order.getOrders) // get all
 router.get('/order/invoice', [authJwt.verifyToken], order.getOrder) // get detail by id
 router.post('/order', [authJwt.verifyToken], order.createOrder) // create new data
@@ -46,18 +44,16 @@ router.patch('/order/:id/update', [authJwt.verifyToken], order.updateOrder) // u
 router.delete('/order/:id/delete', [authJwt.verifyToken], order.deleteOrder) // delete data by id
 
 /* ---------- SUPPLIER ROUTES ---------- */
-router.get('/supplier/search', [authJwt.verifyToken], supplier.searchSuppliers) // search data
 router.get('/supplier', [authJwt.verifyToken], supplier.getSuppliers) // get all
-router.get('/supplier/:name', [authJwt.verifyToken], supplier.getSupplier) // get detail by name
+router.get('/supplier/:id', [authJwt.verifyToken], supplier.getSupplier) // get detail by id
 router.post('/supplier', [authJwt.verifyToken], supplier.createSupplier) // create new data
 router.get('/supplier/:id/edit', [authJwt.verifyToken], supplier.editSupplier) // get detail by id for edit
 router.patch('/supplier/:id/update', [authJwt.verifyToken], supplier.updateSupplier) // update data by id
 router.delete('/supplier/:id/delete', [authJwt.verifyToken], supplier.deleteSupplier)
 
 /* ---------- USER ROUTES ---------- */
-router.get('/user/search', [authJwt.verifyToken], user.searchUsers) // search data
 router.get('/user', [authJwt.verifyToken], user.getUsers) // get all
-router.get('/user/:username', [authJwt.verifyToken], user.getUser) // get detail by username
+router.get('/user/:id', [authJwt.verifyToken], user.getUser) // get detail by id
 router.post('/user', [authJwt.verifyToken], user.createUser) // create new data
 router.get('/user/:id/edit', [authJwt.verifyToken], user.editUser) // get detail by id for edit
 router.patch('/user/:id/update', [authJwt.verifyToken], user.updateUser) // update by id

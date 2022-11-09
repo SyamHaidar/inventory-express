@@ -6,44 +6,42 @@ const Op = Sequelize.Op
 
 // -----------------------------------------------------------------------------
 
-// search all order data
-exports.searchOrders = async (req, res) => {
-  const value = req.query.name?.toLowerCase() || ''
+// get all order data
+exports.getOrders = async (req, res) => {
+  const keyword = req.query.keyword || ''
+  const limit = 50
+  const page = req.query.page || 0
+  const offset = limit * page
 
   try {
-    const data = await db.findAll({
-      order: [['createdAt', 'DESC']],
+    const data = await db.findAndCountAll({
       where: {
         [Op.or]: [
-          { invoice: { [Op.iLike]: `%${value}%` } },
-          { '$product.name$': { [Op.iLike]: `%${value}%` } },
-          { '$supplier.name$': { [Op.iLike]: `%${value}%` } },
+          { invoice: { [Op.iLike]: `%${keyword}%` } },
+          { '$product.name$': { [Op.iLike]: `%${keyword}%` } },
+          { '$supplier.name$': { [Op.iLike]: `%${keyword}%` } },
         ],
       },
       include: [
         { model: Product, as: 'product', attributes: ['id', 'name'] },
         { model: Supplier, as: 'supplier', attributes: ['id', 'name'] },
       ],
-    })
-
-    res.status(200).json(data)
-  } catch (error) {
-    res.json({ message: error.message })
-  }
-}
-
-// get all order data
-exports.getOrders = async (req, res) => {
-  try {
-    const data = await db.findAll({
       order: [['createdAt', 'DESC']],
-      include: [
-        { model: Product, as: 'product', attributes: ['id', 'name'] },
-        { model: Supplier, as: 'supplier', attributes: ['id', 'name'] },
-      ],
+      limit: limit,
+      offset: offset,
     })
 
-    res.status(200).json(data)
+    const totalPages = Math.ceil(data.count / limit)
+    const startIndex = data.count ? offset + 1 : 0
+    const endIndex = startIndex > 0 ? startIndex + data.rows.length - 1 : 0
+
+    res.status(200).json({
+      totalRecords: data.count,
+      totalPages: totalPages,
+      startIndex: startIndex,
+      endIndex: endIndex,
+      data: data.rows,
+    })
   } catch (error) {
     res.json({ message: error.message })
   }
@@ -78,7 +76,7 @@ exports.createOrder = async (req, res) => {
   const time = unixTimestamp()
 
   try {
-    const data = await db.create({
+    await db.create({
       id: uniqid(6),
       productId: req.body.productId,
       supplierId: req.body.supplierId,
@@ -90,16 +88,7 @@ exports.createOrder = async (req, res) => {
       updatedAt: time,
     })
 
-    // find newly created data
-    const findData = await db.findOne({
-      where: { id: data.id },
-      include: [
-        { model: Product, as: 'product', attributes: ['id', 'name'] },
-        { model: Supplier, as: 'supplier', attributes: ['id', 'name'] },
-      ],
-    })
-
-    res.status(200).json(findData)
+    res.status(200).json({ message: 'success' })
   } catch (error) {
     res.json({ message: error.message })
   }
@@ -115,7 +104,6 @@ exports.editOrder = async (req, res) => {
         { model: Supplier, as: 'supplier' },
       ],
     })
-
     res.status(200).json(data)
   } catch (error) {
     res.json({ message: error.message })
@@ -130,7 +118,7 @@ exports.updateOrder = async (req, res) => {
   const invoice = `INV/${invoiceDate}/W/${randomNumber(6)}`
 
   try {
-    const data = await db.update(
+    await db.update(
       {
         productId: req.body.productId,
         supplierId: req.body.supplierId,
@@ -140,19 +128,14 @@ exports.updateOrder = async (req, res) => {
         date: moment(req.body.date).unix(),
         updatedAt: unixTimestamp(),
       },
-      { where: { id: req.params.id }, returning: true, plain: true }
+      {
+        where: {
+          id: req.params.id,
+        },
+      }
     )
 
-    // find newly updated data
-    const findData = await db.findOne({
-      where: { id: data[1].id },
-      include: [
-        { model: Product, as: 'product' },
-        { model: Supplier, as: 'supplier' },
-      ],
-    })
-
-    res.status(200).json(findData)
+    res.status(200).json({ message: 'success' })
   } catch (error) {
     res.json({ message: error.message })
   }
@@ -162,7 +145,7 @@ exports.updateOrder = async (req, res) => {
 exports.deleteOrder = async (req, res) => {
   try {
     await db.destroy({ where: { id: req.params.id } })
-    res.status(200).json({ status: 'success' })
+    res.status(200).json({ message: 'success' })
   } catch (error) {
     res.json({ message: error.message })
   }

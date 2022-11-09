@@ -8,11 +8,18 @@ const jwt = require('jsonwebtoken')
 
 // authenticate check
 exports.verify = async (req, res) => {
-  const token = req.session.token !== undefined ? req.session.token : null
+  const token = req.session?.token || ''
+  let userId = []
 
   try {
+    if (token) {
+      jwt.verify(token, config.secret, (err, decoded) => {
+        userId = decoded.id
+      })
+    }
+
     const data = await db.findOne({
-      where: { token: token },
+      where: { id: userId },
       attributes: { exclude: ['password', 'token', 'createdAt', 'updatedAt'] },
       include: [{ model: UserRole, as: 'role', attributes: ['id', 'name'] }],
     })
